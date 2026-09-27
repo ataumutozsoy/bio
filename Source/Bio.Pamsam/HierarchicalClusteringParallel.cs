@@ -33,8 +33,8 @@ namespace Bio.Algorithms.Alignment.MultipleSequenceAlignment
         // and use it as the node ID which represent the new cluster
         private int _currentClusterID;
 
-        // Temperary distance variables when choosing the closest pair
-        private float _currentDistance, _smallestDistance;
+        // Distance of the closest pair of clusters
+        private float _smallestDistance;
 
         #endregion
 
@@ -121,17 +121,19 @@ namespace Bio.Algorithms.Alignment.MultipleSequenceAlignment
         {
             _smallestDistance = float.MaxValue;
 
-            Parallel.ForEach(_clusters, PAMSAMMultipleSequenceAligner.ParallelOption, i =>
+            // Sequential on purpose: running this minimum search in parallel raced on the
+            // shared fields and made the chosen pair depend on thread timing.
+            foreach (int i in _clusters)
             {
                 int currentIndex = _nodes[i].SequenceID;
-                _currentDistance = distanceMatrix.NearestDistances[currentIndex];
-                if (_currentDistance < _smallestDistance)
+                float currentDistance = distanceMatrix.NearestDistances[currentIndex];
+                if (currentDistance < _smallestDistance)
                 {
-                    _smallestDistance = _currentDistance;
+                    _smallestDistance = currentDistance;
                     _nextA = i;
                     _nextB = _indexToCluster[distanceMatrix.NearestNeighbors[currentIndex]];
                 }
-            });
+            }
         }
 
         /// <summary>
@@ -199,10 +201,10 @@ namespace Bio.Algorithms.Alignment.MultipleSequenceAlignment
                     int currentIndex = Nodes[i].SequenceID;
 
                     // Update distance of the newly merged cluster with another cluster
-                    _currentDistance = _updateDistanceMethod(distanceMatrix, Nodes[_nextA].SequenceID, Nodes[_nextB].SequenceID, currentIndex);
+                    float currentDistance = _updateDistanceMethod(distanceMatrix, Nodes[_nextA].SequenceID, Nodes[_nextB].SequenceID, currentIndex);
 
                     // Update distance matrix
-                    distanceMatrix[currentIndex, nextIndex] = _currentDistance;
+                    distanceMatrix[currentIndex, nextIndex] = currentDistance;
 
                     // Update distance matrix NearestNeighbors
                     if (distanceMatrix.NearestNeighbors[currentIndex] == Nodes[_nextA].SequenceID || distanceMatrix.NearestNeighbors[currentIndex] == Nodes[_nextB].SequenceID)
