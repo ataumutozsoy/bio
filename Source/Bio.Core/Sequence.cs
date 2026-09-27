@@ -148,6 +148,35 @@ namespace Bio
         }
 
         /// <summary>
+        /// Creates a sequence that takes ownership of the given array instead of copying it.
+        /// Used by parsers that already allocate a new array for each sequence; the caller
+        /// must not modify the array afterwards.
+        /// </summary>
+        /// <param name="alphabet">Alphabet of the sequence.</param>
+        /// <param name="values">Sequence data, not validated or copied.</param>
+        /// <returns>The new sequence.</returns>
+        internal static Sequence CreateWithoutCopy(IAlphabet alphabet, byte[] values)
+        {
+            if (alphabet == null)
+            {
+                throw new ArgumentNullException("alphabet");
+            }
+
+            if (values == null)
+            {
+                throw new ArgumentNullException("values");
+            }
+
+            return new Sequence
+            {
+                _sequenceData = values,
+                Alphabet = alphabet,
+                Count = values.GetLongLength(),
+                ID = string.Empty,
+            };
+        }
+
+        /// <summary>
         /// Initializes a new instance of the Sequence class with passed new Sequence. Creates a copy of the sequence.
         /// </summary>
         /// <param name="newSequence">The New sequence for which the copy has to be made.</param>

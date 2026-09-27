@@ -18,6 +18,16 @@ namespace Bio.IO.FastA
     /// </summary>
     public class FastAParser : ISequenceParser
     {
+        /// <summary>
+        /// Size of the StreamReader buffer, in characters.
+        /// </summary>
+        private const int ReaderBufferSize = 64 * 1024;
+
+        /// <summary>
+        /// Maximum length of a byte array (Array.MaxLength, which is not available on netstandard2.0).
+        /// </summary>
+        private const int MaxArrayLength = 0x7FFFFFC7;
+
         private IAlphabet baseAlphabet;
 
         /// <summary>
@@ -59,7 +69,7 @@ namespace Bio.IO.FastA
             }
 
             byte[] buffer = new byte[PlatformManager.Services.DefaultBufferSize];
-            using (var reader = stream.OpenRead())
+            using (var reader = stream.OpenRead(bufferSize: ReaderBufferSize))
             {
                 while (!reader.EndOfStream)
                 {
@@ -83,7 +93,7 @@ namespace Bio.IO.FastA
             }
 
             byte[] buffer = new byte[PlatformManager.Services.DefaultBufferSize];
-            using (var reader = stream.OpenRead())
+            using (var reader = stream.OpenRead(bufferSize: ReaderBufferSize))
             {
                 return this.ParseOne(reader, buffer);
             }
@@ -102,8 +112,6 @@ namespace Bio.IO.FastA
 
             if (reader.Peek() == -1)
                 return null;
-
-            int currentBufferSize = PlatformManager.Services.DefaultBufferSize;
 
             string message;
             string line = reader.ReadLine();
@@ -157,19 +165,17 @@ namespace Bio.IO.FastA
                         string.Format(CultureInfo.CurrentUICulture, Properties.Resource.SequenceDataGreaterthan2GB, name));
                 }
                 int neededSize = bufferPosition + line.Length;
-                if (neededSize >= currentBufferSize)
+                if (neededSize >= buffer.Length)
                 {
-                    //Grow file dynamically, by buffer size, or if too small to fit the new sequence by the size of the sequence
-                    int suggestedSize = buffer.Length + PlatformManager.Services.DefaultBufferSize;
-                    int newSize = neededSize < suggestedSize ? suggestedSize : neededSize;
+                    // Grow geometrically so that long sequences are copied O(log n) times rather than O(n),
+                    // without exceeding the largest array the runtime can allocate.
+                    long suggestedSize = Math.Min(Math.Min(2L * buffer.Length, MaxArrayLength), PlatformManager.Services.MaxSequenceSize);
+                    int newSize = (int)Math.Max(neededSize + 1L, suggestedSize);
                     Array.Resize(ref buffer, newSize);
-                    currentBufferSize =newSize;
                 }
 
-                byte[] symbols = Encoding.UTF8.GetBytes(line);
-
-                // Array.Copy -- for performance improvement.
-                Array.Copy(symbols, 0, buffer, bufferPosition, symbols.Length);
+                // One byte per character; non-ASCII characters become '?' and fail validation below.
+                Encoding.ASCII.GetBytes(line, 0, line.Length, buffer, bufferPosition);
 
                 // Auto detect alphabet if alphabet is set to null, else validate with already set alphabet
                 if (tryAutoDetectAlphabet)
@@ -253,8 +259,10 @@ namespace Bio.IO.FastA
                 alphabet = this.baseAlphabet;
             }
 
-            // In memory sequence
-            return new Sequence(alphabet, tmpBuffer, false) {ID = name};
+            // In memory sequence; tmpBuffer is not used elsewhere, so it is not copied again.
+            Sequence sequence = Sequence.CreateWithoutCopy(alphabet, tmpBuffer);
+            sequence.ID = name;
+            return sequence;
         }
     }
 }
