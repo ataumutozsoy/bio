@@ -686,28 +686,34 @@ namespace Bio.Algorithms.Assembly.Graph
                 throw new ArgumentNullException("node");
             }
 
-            if (this.LeftExtension0 == node)
+            // _validNodeExtensions is a bit-packed byte shared by all eight extension slots;
+            // other threads may set other bits of this node concurrently (see
+            // SimplePathContigBuilder.ExcludeAmbiguousExtensions), so the read-modify-write must be atomic.
+            lock (this)
             {
-                this.InvalidLeftExtension0 = true;
-                return true;
-            }
-            else if (this.LeftExtension1 == node)
-            {
-                this.InvalidLeftExtension1 = true;
-                return true;
-            }
-            else if (this.LeftExtension2 == node)
-            {
-                this.InvalidLeftExtension2 = true;
-                return true;
-            }
-            else if (this.LeftExtension3 == node)
-            {
-                this.InvalidLeftExtension3 = true;
-                return true;
-            }
+                if (this.LeftExtension0 == node)
+                {
+                    this.InvalidLeftExtension0 = true;
+                    return true;
+                }
+                else if (this.LeftExtension1 == node)
+                {
+                    this.InvalidLeftExtension1 = true;
+                    return true;
+                }
+                else if (this.LeftExtension2 == node)
+                {
+                    this.InvalidLeftExtension2 = true;
+                    return true;
+                }
+                else if (this.LeftExtension3 == node)
+                {
+                    this.InvalidLeftExtension3 = true;
+                    return true;
+                }
 
-            return false;
+                return false;
+            }
         }
 
         /// <summary>
@@ -721,28 +727,32 @@ namespace Bio.Algorithms.Assembly.Graph
                 throw new ArgumentNullException("node");
             }
 
-            if (this.RightExtension0 == node)
+            // See MarkLeftExtensionAsInvalid: bit-packed flags need an atomic read-modify-write.
+            lock (this)
             {
-                this.InvalidRightExtension0 = true;
-                return true;
-            }
-            else if (this.RightExtension1 == node)
-            {
-                this.InvalidRightExtension1 = true;
-                return true;
-            }
-            else if (this.RightExtension2 == node)
-            {
-                this.InvalidRightExtension2 = true;
-                return true;
-            }
-            else if (this.RightExtension3 == node)
-            {
-                this.InvalidRightExtension3 = true;
-                return true;
-            }
+                if (this.RightExtension0 == node)
+                {
+                    this.InvalidRightExtension0 = true;
+                    return true;
+                }
+                else if (this.RightExtension1 == node)
+                {
+                    this.InvalidRightExtension1 = true;
+                    return true;
+                }
+                else if (this.RightExtension2 == node)
+                {
+                    this.InvalidRightExtension2 = true;
+                    return true;
+                }
+                else if (this.RightExtension3 == node)
+                {
+                    this.InvalidRightExtension3 = true;
+                    return true;
+                }
 
-            return false;
+                return false;
+            }
         }
 
         /// <summary>
@@ -1414,7 +1424,7 @@ namespace Bio.Algorithms.Assembly.Graph
         /// <summary>
         /// Makes extension edge corresponding to the node invalid,
         /// after checking whether given node is part of left or right extensions.
-        /// Not Thread-safe. Use lock at caller if required.
+        /// Thread-safe: the underlying flag writes lock this node.
         /// </summary>
         /// <param name="node">Node for which extension is to be made invalid.</param>
         public void MarkExtensionInvalid(DeBruijnNode node)

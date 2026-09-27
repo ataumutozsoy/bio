@@ -77,9 +77,9 @@ namespace Bio.Algorithms.Assembly.Padena
         /// <summary>
         /// For nodes that have more than one extension in either direction,
         /// mark the extensions invalid.
-        /// Locks: No locks used as extensions are only marked invalid, not deleted.
-        /// Write locks not used because in only possible conflict both threads will 
-        /// try to write same value to memory. So race is harmless.
+        /// Locks: extensions are only marked invalid, not deleted, but the invalid flags of all
+        /// eight extensions share one byte per node and a neighbour's thread may set a different
+        /// bit of the same node concurrently, so the Mark*Invalid methods lock the node.
         /// </summary>
         private void ExcludeAmbiguousExtensions()
         {
