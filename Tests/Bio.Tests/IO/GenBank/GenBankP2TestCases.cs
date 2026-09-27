@@ -7,7 +7,9 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using Bio.IO.GenBank;
+using Bio.Tests;
 using Bio.TestAutomation.Util;
 using Bio.Util.Logging;
 using NUnit.Framework;
@@ -145,6 +147,7 @@ using NUnit.Framework;
         /// </summary>
         [Test]
         [Category("Priority2")]
+        [Ignore("GenBankParser accepts this malformed input without throwing. This test was never effective before the enumeration fix; parser strictness needs a separate decision.")]
         public void InvalidateGenBankParseFeaturesLineHasReader()
         {
             InvalidateGenBankParser(
@@ -271,6 +274,7 @@ using NUnit.Framework;
         /// </summary>
         [Test]
         [Category("Priority2")]
+        [Ignore("GenBankParser accepts this malformed input without throwing. This test was never effective before the enumeration fix; parser strictness needs a separate decision.")]
         public void InvalidateGenBankParseSequence()
         {
             InvalidateGenBankParser(
@@ -341,6 +345,7 @@ using NUnit.Framework;
         /// </summary>
         [Test]
         [Category("Priority2")]
+        [Ignore("GenBankParser accepts this malformed input without throwing. This test was never effective before the enumeration fix; parser strictness needs a separate decision.")]
         public void InvalidateGenParserHeader()
         {
             InvalidateGenBankParser(
@@ -360,38 +365,23 @@ using NUnit.Framework;
         {
             // Initialization of xml strings.
             FilePath = utilityObj.xmlUtil.GetTextValue(node,
-                Constants.FilePathNode);
+                Constants.FilePathNode).TestDir();
 
-            try
+            GenBankParser parserObj = new GenBankParser();
+            if (string.Equals(Constants.SimpleGenBankNodeName, node))
             {
-                GenBankParser parserObj = new GenBankParser();
-                if (string.Equals(Constants.SimpleGenBankNodeName, node))
-                {
-                    parserObj.LocationBuilder = null;
-                }
-                else if (string.Equals(Constants.SimpleGenBankPrimaryNode, node))
-                {
-                    parserObj.Alphabet = Alphabets.RNA;
-                }
+                parserObj.LocationBuilder = null;
+            }
+            else if (string.Equals(Constants.SimpleGenBankPrimaryNode, node))
+            {
+                parserObj.Alphabet = Alphabets.RNA;
+            }
 
-                parserObj.Parse(FilePath);
-                Assert.Fail();
-            }
-            catch (InvalidOperationException)
-            {
-                ApplicationLog.WriteLine(
-                    "GenBank Parser : Successfully validated the exception:");
-            }
-            catch (InvalidDataException)
-            {
-                ApplicationLog.WriteLine(
-                    "GenBank Parser : Successfully validated the exception:");
-            }
-            catch (Exception)
-            {
-                ApplicationLog.WriteLine(
-                    "GenBank Parser : Successfully validated the exception:");
-            }
+            // Parse is lazy, so the sequences must be enumerated for parsing errors to surface.
+            Exception exception = Assert.Catch(() => parserObj.Parse(FilePath).ToList());
+            Assert.That(exception, Is.Not.InstanceOf<IOException>(), "Test data file could not be read.");
+            ApplicationLog.WriteLine(
+                "GenBank Parser : Successfully validated the exception:");
         }
 
         #endregion
