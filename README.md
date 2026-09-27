@@ -8,9 +8,7 @@ The core library implements a range of file parsers and formatters for common fi
 Build Status
 ------------
 
-|Linux   |Windows |Mac OS X |
-|:------:|:------:|:-------:|
-|[![Build Status](https://travis-ci.org/dotnetbio/bio.svg?branch=master)](https://travis-ci.org/dotnetbio/bio) | [![Build status](https://ci.appveyor.com/api/projects/status/ihru18bvx5d5yofm/branch/master?svg=true)](https://ci.appveyor.com/project/nigel-delaney/bio/branch/master) | [![Build Status](https://travis-ci.org/dotnetbio/bio.svg?branch=master)](https://travis-ci.org/dotnetbio/bio)|
+[![CI](https://github.com/dotnetbio/bio/actions/workflows/ci.yml/badge.svg)](https://github.com/dotnetbio/bio/actions/workflows/ci.yml)
 
 ## Using .NET Bio in your application
 .NET Bio binaries are distributed using [Nuget](wwww.nuget.org):
@@ -38,10 +36,15 @@ PM> Install-Package NetBio.Pamsam -Version 3.0.0-alpha
 
 ## Building .NET Bio from source
 
-There are several solution files (.sln) you can use to build .NET Bio on Windows, Mac or Linux.
+.NET Bio builds on Windows, Linux and macOS with the [.NET 10 SDK](https://dotnet.microsoft.com/download) or later.
 
-- `DotNetBio.sln` builds the .NET Standard 2.0 assemblies necessary for Windows, Linux or Mac OSX. This is the easiest version to build and the one we recommend you start with. It can be built with Visual Studio, Xamarin Studio, or MonoDevelop.
-- `DotNetBio-Fulll` builds some optional command line tools which showcase some of the framework classes for .NET Bio.
+- `DotNetBio.sln` builds the core libraries and their unit tests. The libraries target `netstandard2.0`, `net8.0` and `net10.0`, so they can be used from .NET Framework 4.6.1+, .NET 8 and .NET 10 applications. This is the easiest version to build and the one we recommend you start with.
+- `DotNetBio-Fulll.sln` also builds some optional command line tools which showcase some of the framework classes for .NET Bio.
+
+```
+dotnet build DotNetBio.sln -c Release
+dotnet test DotNetBio.sln -c Release
+```
 
 ## Project Goals
 .NET Bio has been built with specific goals in mind:
