@@ -588,7 +588,12 @@ namespace Bio
                 throw new ArgumentNullException("symbols");
             }
 
-            for (long i = offset; i < length; i++)
+            if (symbols.Length < offset + length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(length));
+            }
+
+            for (long i = offset; i < (length + offset); i++)
             {
                 if (!this.aminoAcidValueMap.ContainsKey(symbols[i]))
                 {

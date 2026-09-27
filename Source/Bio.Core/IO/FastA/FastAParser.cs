@@ -186,7 +186,7 @@ namespace Bio.IO.FastA
                     {
                         // Different alphabet - try to auto detect.
                         this.baseAlphabet = null;
-                        alphabet = Alphabets.AutoDetectAlphabet(buffer, bufferPosition, bufferPosition + line.Length, alphabet);
+                        alphabet = Alphabets.AutoDetectAlphabet(buffer, bufferPosition, line.Length, alphabet);
                         if (alphabet == null)
                         {
                             throw new Exception(string.Format(CultureInfo.InvariantCulture,
