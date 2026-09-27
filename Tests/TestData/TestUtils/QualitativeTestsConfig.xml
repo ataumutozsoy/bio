@@ -56,7 +56,7 @@
     <firstItemIndex>0</firstItemIndex>
     <AlphabetNullException>Value cannot be null.Parameter name: alphabet</AlphabetNullException>
     <InvalidQualityScore>value cannot be null.parameter name: encodedqualityscores</InvalidQualityScore>
-    <InvalidByteQualScore>invalid encoded quality score found. è is not supported in sanger format.parameter name: encodedqualityscores</InvalidByteQualScore>
+    <InvalidByteQualScore>invalid encoded quality score found. è is not supported in sanger format. (parameter 'encodedqualityscores')</InvalidByteQualScore>
     <AlphabetMapError>Specified argument was out of the range of valid values.Parameter name: Sequence contains an illegal character not allowed in alphabet: Dna.  Sequence was:AGTZ</AlphabetMapError>
     <EncodingError>Specified encoding "NCBIeaa" is not valid for the DNA Alphabet.</EncodingError>
     <ReadOnlyException>Can not modify a read only sequence</ReadOnlyException>
@@ -83,7 +83,7 @@
     <InputByteArray>a\a\ab`W[[]\\aa[P\ZZ\DXZ\a</InputByteArray>
     <SeqWithinRange>GGCGC</SeqWithinRange>
     <InvalidQualityScore>value cannot be null.parameter name: encodedQualityScores</InvalidQualityScore>
-    <InvalidByteQualScore>Invalid encoded quality score found. è is not supported in FORMATTYPE format.parameter name: encodedQualityScores</InvalidByteQualScore>
+    <InvalidByteQualScore>Invalid encoded quality score found. è is not supported in FORMATTYPE format. (parameter 'encodedQualityScores')</InvalidByteQualScore>
     <EncodedValues>0123</EncodedValues>
     <RevComplement>CAATGGATGTAGGGTGTAAGTGCGCC</RevComplement>
   </SimpleDNAIllumina>
@@ -130,7 +130,7 @@
     <SequenceAfterReplaceSeq>GGCATACTTACACCCTACATCCATTG</SequenceAfterReplaceSeq>
     <SequenceAfterRemovewithRange>ACTTACACCCTACATCCATTG</SequenceAfterRemovewithRange>
     <InvalidQualityScore>value cannot be null.parameter name: encodedqualityscores</InvalidQualityScore>
-    <InvalidByteQualScore>invalid encoded quality score found. è is not supported in solexa_illumina_v1_0 format.parameter name: encodedqualityscores</InvalidByteQualScore>
+    <InvalidByteQualScore>invalid encoded quality score found. è is not supported in solexa_illumina_v1_0 format. (parameter 'encodedqualityscores')</InvalidByteQualScore>
     <SeqWithinRange>GGCGC</SeqWithinRange>
     <length>5</length>
     <EncodedValues>0123</EncodedValues>

@@ -269,7 +269,7 @@ namespace Bio.Tests.Algorithms.MUMmer
         }
     }
 
-    internal static class extension
+    internal static class SequenceTestExtensions
     {
         public static string ToStrings(this ISequence sequence)
         {

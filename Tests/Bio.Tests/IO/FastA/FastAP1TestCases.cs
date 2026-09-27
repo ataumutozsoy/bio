@@ -486,7 +486,8 @@ namespace Bio.Silverlight.TestAutomation.IO.FastA
             string filePath = utilityObj.xmlUtil.GetTextValue(nodeName, Constants.FilePathNode).TestDir();
             string alphabet = utilityObj.xmlUtil.GetTextValue(nodeName, Constants.AlphabetNameNode);
             Assert.IsTrue(File.Exists(filePath));
-            string filepathTmp = Path.Combine(Path.GetTempPath(), "temp.fasta");
+            // Unique name so concurrent test runs (e.g. one per target framework) don't share the file.
+            string filepathTmp = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName() + ".fasta");
 
             // Ensure output is deleted
             if (File.Exists(filepathTmp))
