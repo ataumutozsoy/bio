@@ -1,23 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>Bio.Algorithms.Assembly.Padena</RootNamespace>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>NetBio.Padena</PackageId>
     <Version>3.0.0-alpha</Version>
-    <Authors>Various</Authors>
-    <Company />
-    <Product>.NET Bio</Product>
     <Description>Parallel DeNovo Assembler (PaDena) support for .NET Bio</Description>
-    <PackageTags>bioinformatics biology FASTA FASTQ GenBank nucleotides genomics .NET</PackageTags>
-    <PackageProjectUrl>https://github.com/dotnetbio/dotnetbio.github.io</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/dotnetbio/bio/blob/master/License</PackageLicenseUrl>
-    <PackageIconUrl>https://avatars3.githubusercontent.com/u/12814787?v=4&amp;s=200</PackageIconUrl>
-    <RepositoryUrl>https://github.com/dotnetbio/bio</RepositoryUrl>
-    <RepositoryType>Github</RepositoryType>
     <PackageReleaseNotes>First release for .NET Standard 2.0</PackageReleaseNotes>
-    <Copyright></Copyright>
   </PropertyGroup>
 
   <ItemGroup>

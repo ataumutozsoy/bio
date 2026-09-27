@@ -1,0 +1,19 @@
+<Project>
+
+  <!-- Settings shared by all .NET Bio library projects. -->
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net8.0;net10.0</TargetFrameworks>
+    <Product>.NET Bio</Product>
+    <Authors>Various</Authors>
+    <Company />
+    <PackageProjectUrl>https://github.com/dotnetbio/dotnetbio.github.io</PackageProjectUrl>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageIconUrl>https://avatars3.githubusercontent.com/u/12814787?v=4&amp;s=200</PackageIconUrl>
+    <PackageTags>bioinformatics biology FASTA FASTQ GenBank nucleotides genomics .NET</PackageTags>
+    <RepositoryUrl>https://github.com/dotnetbio/bio</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+</Project>

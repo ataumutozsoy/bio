@@ -1,22 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>Bio</RootNamespace>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>NetBio.Core</PackageId>
     <Version>3.0.0-alpha</Version>
-    <Authors>Various</Authors>
-    <Company />
-    <Description>.NET Bio is an open source bioinformatics/genomics library for .NET Standard 2.0 that is designed to enable simple loading, saving and analysis of biological data. It includes several common parsers as well as a variety of algorithms for pairwise/multiple alignment and assembly operations.</Description>
-    <PackageProjectUrl>https://github.com/dotnetbio/dotnetbio.github.io</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/dotnetbio/bio/blob/master/License</PackageLicenseUrl>
-    <PackageIconUrl>https://avatars3.githubusercontent.com/u/12814787?v=4&amp;s=200</PackageIconUrl>
-    <RepositoryUrl>https://github.com/dotnetbio/bio</RepositoryUrl>
-    <RepositoryType>Github</RepositoryType>
-    <PackageTags>bioinformatics biology FASTA FASTQ GenBank nucleotides genomics .NETInte</PackageTags>
+    <Description>.NET Bio is an open source bioinformatics/genomics library for .NET that is designed to enable simple loading, saving and analysis of biological data. It includes several common parsers as well as a variety of algorithms for pairwise/multiple alignment and assembly operations.</Description>
     <PackageReleaseNotes>First .NET Standard release.</PackageReleaseNotes>
-    <Product>.NET Bio</Product>
   </PropertyGroup>
 
   <ItemGroup>
