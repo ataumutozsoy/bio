@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 
 using Bio.Algorithms.Alignment;
+using Bio.Extensions;
 using Bio.IO.SAM;
 using Bio.Util;
 
@@ -452,7 +453,7 @@ namespace Bio.IO.BAM
         private static byte[] GetBGZFStructure(Stream compressedStream)
         {
             byte[] compressedArray = new byte[compressedStream.Length];
-            compressedStream.Read(compressedArray, 0, (int)compressedStream.Length);
+            compressedStream.ReadExactly(compressedArray, 0, (int)compressedStream.Length);
             UInt16 blockSize = (UInt16)(compressedStream.Length + 8);
             byte[] bgzfArray = new byte[blockSize];
 

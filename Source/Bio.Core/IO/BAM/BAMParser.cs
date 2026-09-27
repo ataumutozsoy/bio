@@ -1183,7 +1183,7 @@ namespace Bio.IO.BAM
         {
             if (!isCompressed)
             {
-                readStream.Read(array, offset, count);
+                readStream.ReadExactly(array, offset, count);
                 return;
             }
 
@@ -1199,7 +1199,7 @@ namespace Bio.IO.BAM
             }
 
             int bytesToRead = remainingBlockSize >= (long)count ? count : (int)remainingBlockSize;
-            deCompressedStream.Read(array, offset, bytesToRead);
+            deCompressedStream.ReadExactly(array, offset, bytesToRead);
 
             if (bytesToRead < count)
             {
@@ -1225,7 +1225,7 @@ namespace Bio.IO.BAM
 
             currentCompressedBlockStartPos = readStream.Position;
             //read the bgzf header array
-            readStream.Read(arrays, 0, 18);
+            readStream.ReadExactly(arrays, 0, 18);
             //called xlen in the spec
             ELEN = Helper.GetUInt16(arrays, 10);
             //verify there is an extra field, get the block size
