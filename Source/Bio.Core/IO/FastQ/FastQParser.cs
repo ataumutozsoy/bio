@@ -5,7 +5,6 @@ using System.IO;
 using System.Text;
 
 using Bio.Core.Extensions;
-using Bio.Extensions;
 using Bio.Properties;
 
 namespace Bio.IO.FastQ
@@ -92,19 +91,7 @@ namespace Bio.IO.FastQ
                 throw new ArgumentNullException("stream");
             }
 
-            FastQFormatType formatType = this.FormatType;
-
-            using (StreamReader reader = stream.OpenRead(bufferSize: ReaderBufferSize))
-            {
-                while (reader.Peek() != -1)
-                {
-                    IQualitativeSequence seq = ParseOne(reader, formatType);
-                    if (seq != null)
-                    {
-                        yield return seq;
-                    }
-                }
-            }
+            return this.ParseAll(stream, this.FormatType);
         }
 
         /// <summary>
@@ -130,9 +117,25 @@ namespace Bio.IO.FastQ
                 throw new ArgumentNullException("stream");
             }
 
-            using (StreamReader reader = stream.OpenRead(bufferSize: ReaderBufferSize))
+            return ParseOne(new ByteLineReader(stream, ReaderBufferSize), formatType);
+        }
+
+        /// <summary>
+        ///     Parses all QualitativeSequences in the stream.
+        /// </summary>
+        /// <param name="stream">Stream to be parsed.</param>
+        /// <param name="formatType">FASTQ format type.</param>
+        /// <returns>Returns the QualitativeSequences.</returns>
+        private IEnumerable<IQualitativeSequence> ParseAll(Stream stream, FastQFormatType formatType)
+        {
+            var reader = new ByteLineReader(stream, ReaderBufferSize);
+            while (reader.Peek() != -1)
             {
-                return ParseOne(reader, formatType);
+                IQualitativeSequence seq = ParseOne(reader, formatType);
+                if (seq != null)
+                {
+                    yield return seq;
+                }
             }
         }
 
@@ -142,25 +145,26 @@ namespace Bio.IO.FastQ
         /// <param name="reader">Reader to be parsed.</param>
         /// <param name="formatType">FASTQ format type.</param>
         /// <returns>Returns a QualitativeSequence.</returns>
-        private IQualitativeSequence ParseOne(StreamReader reader, FastQFormatType formatType)
+        private IQualitativeSequence ParseOne(ByteLineReader reader, FastQFormatType formatType)
         {
             if (reader.EndOfStream)
             {
                 return null;
             }
 
-            string line = ReadNextLine(reader, true);
-            if (line == null || !line.StartsWith("@", StringComparison.Ordinal))
+            int lineStart, lineLength;
+            bool hasLine = ReadNextLine(reader, out lineStart, out lineLength);
+            if (!hasLine || reader.Buffer[lineStart] != (byte)'@')
             {
                 string message = string.Format(CultureInfo.CurrentCulture, Resource.INVALID_INPUT_FILE, this.Name);
                 throw new Exception(message);
             }
 
             // Process header line.
-            string id = line.Substring(1).Trim();
+            string id = reader.GetString(lineStart + 1, lineLength - 1).Trim();
 
-            line = ReadNextLine(reader, true);
-            if (string.IsNullOrEmpty(line))
+            hasLine = ReadNextLine(reader, out lineStart, out lineLength);
+            if (!hasLine)
             {
                 string details = string.Format(CultureInfo.CurrentCulture, Resource.FastQ_InvalidSequenceLine, id);
                 string message = string.Format(
@@ -172,13 +176,13 @@ namespace Bio.IO.FastQ
             }
 
             // Get sequence from second line.
-            byte[] sequenceData = Encoding.ASCII.GetBytes(line);
+            byte[] sequenceData = reader.ToAsciiBytes(lineStart, lineLength);
 
             // Goto third line.
-            line = ReadNextLine(reader, true);
+            hasLine = ReadNextLine(reader, out lineStart, out lineLength);
 
             // Check for '+' symbol in the third line.
-            if (line == null || !line.StartsWith("+", StringComparison.Ordinal))
+            if (!hasLine || reader.Buffer[lineStart] != (byte)'+')
             {
                 string details = string.Format(
                     CultureInfo.CurrentCulture,
@@ -192,7 +196,7 @@ namespace Bio.IO.FastQ
                 throw new Exception(message);
             }
 
-            string qualScoreId = line.Substring(1).Trim();
+            string qualScoreId = reader.GetString(lineStart + 1, lineLength - 1).Trim();
 
             if (!string.IsNullOrEmpty(qualScoreId) && !id.Equals(qualScoreId))
             {
@@ -209,9 +213,9 @@ namespace Bio.IO.FastQ
             }
 
             // Goto fourth line.
-            line = ReadNextLine(reader, true);
+            hasLine = ReadNextLine(reader, out lineStart, out lineLength);
 
-            if (string.IsNullOrEmpty(line))
+            if (!hasLine)
             {
                 string details = string.Format(CultureInfo.CurrentCulture, Resource.FastQ_EmptyQualityScoreLine, id);
                 string message = string.Format(
@@ -223,7 +227,7 @@ namespace Bio.IO.FastQ
             }
 
             // Get the quality scores from the fourth line.
-            byte[] qualScores = Encoding.ASCII.GetBytes(line);
+            byte[] qualScores = reader.ToAsciiBytes(lineStart, lineLength);
 
             // Check for sequence length and quality score length.
             if (sequenceData.GetLongLength() != qualScores.GetLongLength())
@@ -265,24 +269,22 @@ namespace Bio.IO.FastQ
         }
 
         /// <summary>
-        ///     Gets the next available line from the specified stream reader.
+        ///     Reads the next line that is not blank.
         /// </summary>
-        /// <param name="reader">Stream reader.</param>
-        /// <param name="skipBlankLine">
-        ///     Flag to skip blank lines. If true this method returns
-        ///     first non blank line available from the current position, else returns next available line.
-        /// </param>
-        /// <returns></returns>
-        private static string ReadNextLine(TextReader reader, bool skipBlankLine)
+        /// <param name="reader">Reader to read from.</param>
+        /// <param name="lineStart">Offset of the line in the reader's buffer.</param>
+        /// <param name="lineLength">Length of the line.</param>
+        /// <returns>False if the end of the stream was reached.</returns>
+        private static bool ReadNextLine(ByteLineReader reader, out int lineStart, out int lineLength)
         {
             // Continue reading if blank line found.
-            string line = reader.ReadLine();
-            while (skipBlankLine && line != null && string.IsNullOrEmpty(line))
+            bool hasLine = reader.ReadLine(out lineStart, out lineLength);
+            while (hasLine && lineLength == 0)
             {
-                line = reader.ReadLine();
+                hasLine = reader.ReadLine(out lineStart, out lineLength);
             }
 
-            return line;
+            return hasLine;
         }
     }
 }

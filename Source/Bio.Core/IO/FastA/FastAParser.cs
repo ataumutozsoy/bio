@@ -4,7 +4,6 @@ using System.Globalization;
 using System.IO;
 using System.Text;
 
-using Bio.Extensions;
 
 namespace Bio.IO.FastA
 {
@@ -68,16 +67,7 @@ namespace Bio.IO.FastA
                 throw new ArgumentNullException("stream");
             }
 
-            byte[] buffer = new byte[PlatformManager.Services.DefaultBufferSize];
-            using (var reader = stream.OpenRead(bufferSize: ReaderBufferSize))
-            {
-                while (!reader.EndOfStream)
-                {
-                    var seq = this.ParseOne(reader, buffer);
-                    if (seq != null)
-                        yield return seq;
-                }
-            }
+            return this.ParseAll(stream);
         }
 
         /// <summary>
@@ -93,36 +83,43 @@ namespace Bio.IO.FastA
             }
 
             byte[] buffer = new byte[PlatformManager.Services.DefaultBufferSize];
-            using (var reader = stream.OpenRead(bufferSize: ReaderBufferSize))
+            return this.ParseOne(new ByteLineReader(stream, ReaderBufferSize), ref buffer);
+        }
+
+        /// <summary>
+        /// Parses all sequences in the stream.
+        /// </summary>
+        /// <param name="stream">Stream to parse.</param>
+        /// <returns>The sequences.</returns>
+        private IEnumerable<ISequence> ParseAll(Stream stream)
+        {
+            // The buffer is shared by all sequences, so it only grows to the longest one once.
+            byte[] buffer = new byte[PlatformManager.Services.DefaultBufferSize];
+            var reader = new ByteLineReader(stream, ReaderBufferSize);
+            while (!reader.EndOfStream)
             {
-                return this.ParseOne(reader, buffer);
+                var seq = this.ParseOne(reader, ref buffer);
+                if (seq != null)
+                    yield return seq;
             }
         }
 
         /// <summary>
         /// Returns an IEnumerable of sequences in the stream being parsed.
         /// </summary>
-        /// <param name="reader">Stream to parse.</param>
-        /// <param name="buffer">Buffer to use.</param>
+        /// <param name="reader">Reader of the stream to parse.</param>
+        /// <param name="buffer">Buffer to use; replaced by a larger one if needed.</param>
         /// <returns>Returns a Sequence.</returns>
-        ISequence ParseOne(TextReader reader, byte[] buffer)
+        ISequence ParseOne(ByteLineReader reader, ref byte[] buffer)
         {
-            if (reader == null)
-                throw new ArgumentNullException("reader");
-
             if (reader.Peek() == -1)
                 return null;
 
             string message;
-            string line = reader.ReadLine();
+            int lineStart, lineLength;
+            bool hasLine = ReadNonEmptyLine(reader, out lineStart, out lineLength);
 
-            // Continue reading if blank line found.
-            while (line != null && string.IsNullOrEmpty(line))
-            {
-                line = reader.ReadLine();
-            }
-
-            if (line == null || !line.StartsWith(">", StringComparison.OrdinalIgnoreCase))
+            if (!hasLine || reader.Buffer[lineStart] != (byte)'>')
             {
                 message = string.Format(
                         CultureInfo.InvariantCulture,
@@ -132,19 +129,13 @@ namespace Bio.IO.FastA
                 throw new Exception(message);
             }
 
-            string name = line.Substring(1);
+            string name = reader.GetString(lineStart + 1, lineLength - 1);
             int bufferPosition = 0;
 
-            // Read next line.
-            line = reader.ReadLine();
+            // Read next line, skipping blank lines.
+            hasLine = ReadNonEmptyLine(reader, out lineStart, out lineLength);
 
-            // Continue reading if blank line found.
-            while (line != null && string.IsNullOrEmpty(line))
-            {
-                line = reader.ReadLine();
-            }
-
-            if (line == null)
+            if (!hasLine)
             {
                 message = string.Format(
                     CultureInfo.InvariantCulture,
@@ -158,13 +149,18 @@ namespace Bio.IO.FastA
 
             do
             {
+                // Lines with non-ASCII bytes are decoded first, so that each character becomes
+                // one byte ('?' if it is not ASCII) exactly as when parsing through a StreamReader.
+                string decodedLine = reader.IsAscii(lineStart, lineLength) ? null : reader.GetString(lineStart, lineLength);
+                int symbolCount = decodedLine == null ? lineLength : decodedLine.Length;
+
                 // Files > 2G are not supported in this release.
-                if ((((long)bufferPosition + line.Length) >= PlatformManager.Services.MaxSequenceSize))
+                if ((((long)bufferPosition + symbolCount) >= PlatformManager.Services.MaxSequenceSize))
                 {
                     throw new ArgumentOutOfRangeException(
                         string.Format(CultureInfo.CurrentUICulture, Properties.Resource.SequenceDataGreaterthan2GB, name));
                 }
-                int neededSize = bufferPosition + line.Length;
+                int neededSize = bufferPosition + symbolCount;
                 if (neededSize >= buffer.Length)
                 {
                     // Grow geometrically so that long sequences are copied O(log n) times rather than O(n),
@@ -174,16 +170,22 @@ namespace Bio.IO.FastA
                     Array.Resize(ref buffer, newSize);
                 }
 
-                // One byte per character; non-ASCII characters become '?' and fail validation below.
-                Encoding.ASCII.GetBytes(line, 0, line.Length, buffer, bufferPosition);
+                if (decodedLine == null)
+                {
+                    System.Buffer.BlockCopy(reader.Buffer, lineStart, buffer, bufferPosition, lineLength);
+                }
+                else
+                {
+                    Encoding.ASCII.GetBytes(decodedLine, 0, decodedLine.Length, buffer, bufferPosition);
+                }
 
                 // Auto detect alphabet if alphabet is set to null, else validate with already set alphabet
                 if (tryAutoDetectAlphabet)
                 {
-                    // If we have a base alphabet we detected earlier, 
+                    // If we have a base alphabet we detected earlier,
                     // then try that first.
                     if (this.baseAlphabet != null &&
-                        this.baseAlphabet.ValidateSequence(buffer, bufferPosition, line.Length))
+                        this.baseAlphabet.ValidateSequence(buffer, bufferPosition, symbolCount))
                     {
                         alphabet = this.baseAlphabet;
                     }
@@ -192,11 +194,11 @@ namespace Bio.IO.FastA
                     {
                         // Different alphabet - try to auto detect.
                         this.baseAlphabet = null;
-                        alphabet = Alphabets.AutoDetectAlphabet(buffer, bufferPosition, line.Length, alphabet);
+                        alphabet = Alphabets.AutoDetectAlphabet(buffer, bufferPosition, symbolCount, alphabet);
                         if (alphabet == null)
                         {
                             throw new Exception(string.Format(CultureInfo.InvariantCulture,
-                                            Properties.Resource.InvalidSymbolInString, line));
+                                            Properties.Resource.InvalidSymbolInString, decodedLine ?? reader.GetString(lineStart, lineLength)));
                         }
                     }
 
@@ -226,29 +228,29 @@ namespace Bio.IO.FastA
                 else
                 {
                     // Validate against supplied alphabet.
-                    if (!alphabet.ValidateSequence(buffer, bufferPosition, line.Length))
+                    if (!alphabet.ValidateSequence(buffer, bufferPosition, symbolCount))
                     {
-                        throw new Exception(string.Format(CultureInfo.InvariantCulture, Properties.Resource.InvalidSymbolInString, line));
+                        throw new Exception(string.Format(CultureInfo.InvariantCulture, Properties.Resource.InvalidSymbolInString, decodedLine ?? reader.GetString(lineStart, lineLength)));
                     }
                 }
 
-                bufferPosition += line.Length;
+                bufferPosition += symbolCount;
 
                 if (reader.Peek() == (byte)'>')
                 {
                     break;
                 }
-                
+
                 // Read next line.
-                line = reader.ReadLine();
+                hasLine = reader.ReadLine(out lineStart, out lineLength);
 
                 // Continue reading if blank line found.
-                while (line != null && string.IsNullOrEmpty(line) && reader.Peek() != (byte)'>')
+                while (hasLine && lineLength == 0 && reader.Peek() != (byte)'>')
                 {
-                    line = reader.ReadLine();
+                    hasLine = reader.ReadLine(out lineStart, out lineLength);
                 }
             }
-            while (line != null);
+            while (hasLine);
 
             // Truncate buffer to remove trailing 0's
             byte[] tmpBuffer = new byte[bufferPosition];
@@ -263,6 +265,24 @@ namespace Bio.IO.FastA
             Sequence sequence = Sequence.CreateWithoutCopy(alphabet, tmpBuffer);
             sequence.ID = name;
             return sequence;
+        }
+
+        /// <summary>
+        /// Reads the next line that is not empty.
+        /// </summary>
+        /// <param name="reader">Reader to read from.</param>
+        /// <param name="lineStart">Offset of the line in the reader's buffer.</param>
+        /// <param name="lineLength">Length of the line.</param>
+        /// <returns>False if the end of the stream was reached.</returns>
+        private static bool ReadNonEmptyLine(ByteLineReader reader, out int lineStart, out int lineLength)
+        {
+            bool hasLine = reader.ReadLine(out lineStart, out lineLength);
+            while (hasLine && lineLength == 0)
+            {
+                hasLine = reader.ReadLine(out lineStart, out lineLength);
+            }
+
+            return hasLine;
         }
     }
 }
