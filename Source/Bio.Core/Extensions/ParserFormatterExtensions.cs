@@ -80,7 +80,9 @@ namespace Bio
                     }
                     else
                     {
-                        fs = new FileStream(data.Item1, (writable) ? FileMode.Create : FileMode.Open);
+                        fs = writable
+                            ? new FileStream(data.Item1, FileMode.Create)
+                            : new FileStream(data.Item1, FileMode.Open, FileAccess.Read, FileShare.Read);
                         fileData.Remove(parser);
                         fileData.Add(parser, new Tuple<string, FileStream>(data.Item1, fs));
                     }
