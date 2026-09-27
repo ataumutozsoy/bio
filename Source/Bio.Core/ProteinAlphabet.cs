@@ -64,6 +64,11 @@ namespace Bio
         private readonly Dictionary<byte, byte> aminoAcidValueMap = new Dictionary<byte, byte>();
 
         /// <summary>
+        /// All symbols accepted by this alphabet (the keys of aminoAcidValueMap), for fast validation.
+        /// </summary>
+        private readonly AlphabetSymbolSet validSymbols = new AlphabetSymbolSet();
+
+        /// <summary>
         /// Symbol to three-letter amino acid abbreviation.
         /// </summary>
         private readonly Dictionary<byte, string> abbreviationMap1to3 = new Dictionary<byte, string>();
@@ -593,15 +598,7 @@ namespace Bio
                 throw new ArgumentOutOfRangeException(nameof(length));
             }
 
-            for (long i = offset; i < (length + offset); i++)
-            {
-                if (!this.aminoAcidValueMap.ContainsKey(symbols[i]))
-                {
-                    return false;
-                }
-            }
-
-            return true;
+            return this.validSymbols.ContainsAll(symbols, offset, length);
         }
 
         /// <summary>
@@ -671,9 +668,11 @@ namespace Bio
             }
 
             this.aminoAcidValueMap.Add(aminoAcidValue, aminoAcidValue);
+            this.validSymbols.Add(aminoAcidValue);
             foreach (byte value in otherPossibleValues)
             {
                 this.aminoAcidValueMap.Add(value, aminoAcidValue);
+                this.validSymbols.Add(value);
             }
 
             this.aminoAcids.Add(aminoAcidValue);

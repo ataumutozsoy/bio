@@ -57,6 +57,11 @@ namespace Bio
         private readonly Dictionary<byte, byte> nucleotideValueMap = new Dictionary<byte, byte>();
 
         /// <summary>
+        /// All symbols accepted by this alphabet (the keys of nucleotideValueMap), for fast validation.
+        /// </summary>
+        private readonly AlphabetSymbolSet validSymbols = new AlphabetSymbolSet();
+
+        /// <summary>
         ///     Symbol to Friendly name mapping.
         /// </summary>
         private readonly Dictionary<byte, string> friendlyNameMap = new Dictionary<byte, string>();
@@ -413,15 +418,7 @@ namespace Bio
                 throw new ArgumentOutOfRangeException(nameof(length));
             }
 
-            for (long i = offset; i < (length + offset); i++)
-            {
-                if (!this.nucleotideValueMap.ContainsKey(symbols[i]))
-                {
-                    return false;
-                }
-            }
-
-            return true;
+            return this.validSymbols.ContainsAll(symbols, offset, length);
         }
 
         /// <summary>
@@ -515,9 +512,11 @@ namespace Bio
             }
 
             this.nucleotideValueMap.Add(nucleotideValue, nucleotideValue);
+            this.validSymbols.Add(nucleotideValue);
             foreach (byte value in otherPossibleValues)
             {
                 this.nucleotideValueMap.Add(value, nucleotideValue);
+                this.validSymbols.Add(value);
             }
 
             this.nucleotides.Add(nucleotideValue);
