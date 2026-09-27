@@ -203,7 +203,7 @@ namespace Bio.Matrix
                         TColKey colKey = Parser.Parse<TColKey>(fields[1]);
                         TValue value = Parser.Parse<TValue>(fields[2]);
 
-                        variableToCaseIdToNonMissingValue.GetValueOrDefault(rowKey)[colKey] = value;
+                        DictionaryExtensions.GetValueOrDefault(variableToCaseIdToNonMissingValue, rowKey)[colKey] = value;
                         colKeys.Add(colKey);
                     }
                     catch (Exception e)

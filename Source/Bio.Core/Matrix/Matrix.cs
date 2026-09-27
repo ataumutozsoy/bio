@@ -898,6 +898,9 @@ namespace Bio.Matrix
         /// </summary>
         /// <param name="info">The object that holds the serialized object data.</param>
         /// <param name="context">The contextual information about the source or destination.</param>
+#if NET8_0_OR_GREATER
+        [Obsolete("This API supports obsolete formatter-based serialization. It should not be called or extended by application code.", DiagnosticId = "SYSLIB0051")]
+#endif
         protected MatrixFormatException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {

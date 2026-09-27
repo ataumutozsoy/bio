@@ -52,9 +52,9 @@ namespace Bio.Util
             {
                 //JENN: not a valid build--happens when I'm in debug mode for some reason
                 //time = new DateTime(0);
-                FileInfo assemblyFile = new FileInfo(new Uri(GetEntryOrCallingAssembly().CodeBase).LocalPath);
-                if (assemblyFile.Exists)
-                    time = assemblyFile.LastWriteTime;
+                string assemblyLocation = GetEntryOrCallingAssembly().Location;
+                if (!string.IsNullOrEmpty(assemblyLocation) && File.Exists(assemblyLocation))
+                    time = File.GetLastWriteTime(assemblyLocation);
                 else
                     time = new DateTime(0);
             }
