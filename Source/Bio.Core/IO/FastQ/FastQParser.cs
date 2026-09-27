@@ -17,6 +17,11 @@ namespace Bio.IO.FastQ
     public class FastQParser : IParserWithAlphabet<IQualitativeSequence>
     {
         /// <summary>
+        ///     Size of the StreamReader buffer, in characters.
+        /// </summary>
+        private const int ReaderBufferSize = 64 * 1024;
+
+        /// <summary>
         ///     Initializes a new instance of the FastQParser class.
         /// </summary>
         public FastQParser()
@@ -89,7 +94,7 @@ namespace Bio.IO.FastQ
 
             FastQFormatType formatType = this.FormatType;
 
-            using (StreamReader reader = stream.OpenRead())
+            using (StreamReader reader = stream.OpenRead(bufferSize: ReaderBufferSize))
             {
                 while (reader.Peek() != -1)
                 {
@@ -125,7 +130,7 @@ namespace Bio.IO.FastQ
                 throw new ArgumentNullException("stream");
             }
 
-            using (StreamReader reader = stream.OpenRead())
+            using (StreamReader reader = stream.OpenRead(bufferSize: ReaderBufferSize))
             {
                 return ParseOne(reader, formatType);
             }
@@ -253,7 +258,10 @@ namespace Bio.IO.FastQ
                 }
             }
 
-            return new QualitativeSequence(alphabet, formatType, sequenceData, qualScores, false) { ID = id };
+            // sequenceData and qualScores were created for this record only, so they are not copied again.
+            QualitativeSequence sequence = QualitativeSequence.CreateWithoutCopy(alphabet, formatType, sequenceData, qualScores);
+            sequence.ID = id;
+            return sequence;
         }
 
         /// <summary>

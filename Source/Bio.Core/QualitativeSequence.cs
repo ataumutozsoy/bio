@@ -133,6 +133,51 @@ namespace Bio
         #endregion
 
         #region Constructors
+
+        /// <summary>
+        /// Used by <see cref="CreateWithoutCopy"/>.
+        /// </summary>
+        private QualitativeSequence()
+        {
+        }
+
+        /// <summary>
+        /// Creates a qualitative sequence that takes ownership of the sequence array instead of copying it.
+        /// Used by parsers that already allocate new arrays for each sequence; the caller must not modify
+        /// the sequence array afterwards. Nothing is validated.
+        /// </summary>
+        /// <param name="alphabet">Alphabet of the sequence.</param>
+        /// <param name="fastQFormatType">FastQ format type of the encoded quality scores.</param>
+        /// <param name="sequence">Sequence data, not validated or copied.</param>
+        /// <param name="encodedQualityScores">Encoded quality scores, one per symbol.</param>
+        /// <returns>The new qualitative sequence.</returns>
+        internal static QualitativeSequence CreateWithoutCopy(IAlphabet alphabet, FastQFormatType fastQFormatType, byte[] sequence, byte[] encodedQualityScores)
+        {
+            if (alphabet == null)
+            {
+                throw new ArgumentNullException("alphabet");
+            }
+
+            if (sequence == null)
+            {
+                throw new ArgumentNullException("sequence");
+            }
+
+            if (encodedQualityScores == null)
+            {
+                throw new ArgumentNullException("encodedQualityScores");
+            }
+
+            return new QualitativeSequence
+            {
+                Alphabet = alphabet,
+                ID = string.Empty,
+                FormatType = fastQFormatType,
+                sequenceData = sequence,
+                qualityScores = GetDecodedQualScoresInSignedBytes(encodedQualityScores, fastQFormatType),
+                Count = sequence.GetLongLength(),
+            };
+        }
         /// <summary>
         /// Initializes a new instance of the QualitativeSequence class with specified alphabet, quality score type,
         /// byte array representing symbols and encoded quality scores.
@@ -208,7 +253,6 @@ namespace Bio
             }
 
             this.sequenceData = new byte[sequence.GetLongLength()];
-            this.qualityScores = new sbyte[encodedQualityScores.GetLongLength()];
 
             Helper.Copy(sequence, this.sequenceData, sequence.GetLongLength());
             this.qualityScores = GetDecodedQualScoresInSignedBytes(encodedQualityScores, this.FormatType);
